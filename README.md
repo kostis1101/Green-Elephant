@@ -6,7 +6,7 @@ A library that add complex numbers and other functionalities.
 
 for accessing math related functions: "GreenMath."
 
-to create a complex number: "Complex <name> = new Complex(<real>, <imaginary>);"
+to create a complex number: "Complex [name] = new Complex([real], [imaginary]);"
 
 
 Social media:
