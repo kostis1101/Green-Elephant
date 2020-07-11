@@ -1,5 +1,5 @@
 # Green-Elephant
-A library that add complex numbers and other functionalities.
+GreenElephant is a library for C# that adds a lot of functionality. More specific: it adds Complex number, easy conversion between coordinate systems, conversion from string to float-double and more. Note that the library is in working progress.
 
 1)  Put the file into your project
 2)  write into your code "using GreenElephant;"
