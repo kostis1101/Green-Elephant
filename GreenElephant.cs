@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
@@ -13,17 +14,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Schema;
 
 namespace GreenElephant
 {
     class GreenMath
     {
+        public static double Fi = (1 + Math.Sqrt(5)) / 2;
+
         /// <summary>
         /// returns nth Fibonacci number
         /// </summary>
         /// <param name="n"></param>
         /// <returns>unsigned 64bit long / ulong</returns>
-        public static ulong getFibonacci(int n)
+        /*public static ulong getFibonacci(int n)
         {
             ulong result = 0;
 
@@ -44,6 +48,10 @@ namespace GreenElephant
             }
 
             return result;
+        }*/
+        public static Complex getFibonacci(Complex c)
+        {
+            return (Complex.Pow((float)Fi, c) - (Complex.Pow(new Complex(-1f/(float)Fi, 0), c)))/((float)Math.Sqrt(5));
         }
 
         /// <summary>
@@ -273,7 +281,19 @@ namespace GreenElephant
         public static void CartesianToPolar(float x, float y, out float a, out float d)
         {
             a = (float)Math.Atan((y / x));
+            if (x < 0)
+            {
+                a = (float)Math.PI - a;
+            }
             d = (float)Math.Sqrt((x * x + y * y));
+        }
+        public static void CartesianToPolar(float x, float y, out float a)
+        {
+            a = (float)Math.Atan((y / x));
+            if (x < 0)
+            {
+                a = (float)Math.PI - a;
+            }
         }
 
         public static void PolarToCartesian(float a, float d, out float x, out float y)
@@ -341,6 +361,146 @@ namespace GreenElephant
         {
             return (1 / (1 + Math.Pow(Math.E, -x)));
         }
+
+        public static float map(float num, float fromMin, float fromMax, float toMin, float toMax)
+        {
+            return ((num - fromMin) / (fromMax - fromMin)) * (toMax - toMin) + toMin;
+        }
+
+        public static float Factorial(float num, int idurations = 100)
+        {
+            float result = 1;
+
+            if(num % 1 == 0)
+            {
+                for(int i = (int)num; i > 1; i--)
+                {
+                    result *= i;
+                }
+            }
+            else
+            {
+                result = GammaFunction(num + 1);
+            }
+            return result;
+        }
+
+        public static float GammaFunction(float num)
+        {
+            Func<float, float> func = x => (float)(Math.Pow(x, num - 1) * Math.Pow(Math.E, -x));
+
+            return Integral(func, 0.0001f, 30, 10000);
+        }
+
+        public static float Integral(Func<float, float> func, float minBounds, float maxBounds, float detail)
+        {
+            float result = 0;
+
+            detail = 1f / detail;
+
+            for (float x = minBounds; x < maxBounds; x += detail)
+            {
+                result += func(x) * detail;
+            }
+
+            return result;
+        }
+
+        public static float Derivative(Func<float, float> func, float x, float accuracy)
+        {
+            return (func(x + accuracy) - func(x)) / accuracy;
+        }
+
+        public static bool isPrime(int num)
+        {
+            if (num <= 1)
+                return false;
+
+            for (int i = 2; i <= Math.Sqrt(num); i++)
+            {
+                if(num % i == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public static int[] getPrimeDivisors(int num)
+        {
+            List<int> result = new List<int>();
+
+            for (int i = 1; i <= num; i++)
+            {
+                int correntPrime = getNthPrime(i);
+                
+                while(num % correntPrime == 0)
+                {
+                    result.Add(correntPrime);
+                    num /= correntPrime;
+                }
+            }
+
+            return result.ToArray();
+        }
+
+        public static int getNthPrime(int n)
+        {
+            int numOfPrimes = 0;
+            int i = 2;
+            while (numOfPrimes < n)
+            {
+                if (isPrime(i))
+                {
+                    numOfPrimes++;
+                }
+
+                i++;
+            }
+
+            return --i;
+        }
+
+        public static int smallMi(int n)
+        {
+            int[] divisors = getPrimeDivisors(n);
+
+            if (n == 1)
+                return 1;
+
+            for (int i = 0; i < divisors.Length; i++)
+            {
+                for (int j = 0; j < divisors.Length; j++)
+                {
+                    if(divisors[i] == divisors[j] && i != j)
+                    {
+                        return 0;
+                    }
+                }
+            }
+
+            if(divisors.Length % 2 == 0)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        public static int capitalMi(int n)
+        {
+            int result = 0;
+            
+            for (int i = 1; i <= n; i++)
+            {
+                result += smallMi(i);
+            }
+
+            return result;
+        }
     }
 
     class GreenString
@@ -381,7 +541,7 @@ namespace GreenElephant
             normalized.r = (float)nx;
             normalized.i = (float)ny;
         }
-
+            
         public Complex()
         {
             r = 0;
@@ -756,6 +916,13 @@ namespace GreenElephant
 
         public static Complex Pow(float Base, Complex Exponent)
         {
+            if(Base < 0)
+            {
+                Exponent *= ln(new Complex(Base, 0));
+
+                Base = (float)Math.E;
+            }
+
             Complex result;
             Complex realPart = new Complex();
             Complex imaginaryPart = new Complex();
@@ -843,28 +1010,76 @@ namespace GreenElephant
             return Divide(sin(complex), cos(complex));
         }
 
+        public static Complex Sqrt(Complex complex)
+        {
+            return Pow(complex, 0.5f);
+        }
+
+        public static List<Complex> Roots(Complex complex, int root)
+        {
+            List<Complex> results = new List<Complex>();
+
+            for (int j = 1; j <= root; j++)
+            {
+                float r;
+                float i;
+
+                float a;
+                float d;
+
+                GreenMath.CartesianToPolar(complex.r, complex.i, out a, out d);
+                Console.WriteLine(a + "\t" + d);
+                GreenMath.PolarToCartesian((a + (float)Math.PI * 2f * (j - 1) / root), (float)Math.Pow(d, 1f / root), out r, out i);
+
+                results.Add(new Complex(r, i));
+            }
+
+            return results;
+        }
+
+        #region opperators
         public static Complex operator +(Complex c) => c;
         public static Complex operator -(Complex c) => Multiply(c, -1);
 
         public static Complex operator +(Complex a, Complex b) => Add(a, b);
         public static Complex operator +(float a, Complex b) => Add(a, b);
         public static Complex operator +(Complex a, float b) => Add(a, b);
+        public static Complex operator +(Complex a, int b) => Add(a, b);
+        public static Complex operator +(int a, Complex b) => Add(a, b);
+        public static Complex operator +(Complex a, double b) => Add(a, (float)b);
+        public static Complex operator +(double a, Complex b) => Add((float)a, b);
+        public static Complex operator +(Complex a, decimal b) => Add(a, (float)b);
+        public static Complex operator +(decimal a, Complex b) => Add((float)a, b);
 
         public static Complex operator -(Complex a, Complex b) => Subtract(a, b);
         public static Complex operator -(float a, Complex b) => Subtract(a, b);
         public static Complex operator -(Complex a, float b) => Subtract(a, b);
+        public static Complex operator -(Complex a, int b) => Subtract(a, b);
+        public static Complex operator -(int a, Complex b) => Subtract(a, b);
+        public static Complex operator -(Complex a, double b) => Subtract(a, (float)b);
+        public static Complex operator -(double a, Complex b) => Subtract((float)a, b);
+        public static Complex operator -(Complex a, decimal b) => Subtract(a, (float)b);
+        public static Complex operator -(decimal a, Complex b) => Subtract((float)a, b);
 
         public static Complex operator *(Complex a, Complex b) => Multiply(a, b);
         public static Complex operator *(Complex a, float b) => Multiply(a, b);
         public static Complex operator *(float a, Complex b) => Multiply(a, b);
+        public static Complex operator *(int a, Complex b) => Multiply(a, b);
+        public static Complex operator *(Complex a, int b) => Multiply(a, b);
+        public static Complex operator *(double a, Complex b) => Multiply((float)a, b);
+        public static Complex operator *(Complex a, double b) => Multiply(a, (float)b);
+        public static Complex operator *(decimal a, Complex b) => Multiply((float)a, b);
+        public static Complex operator *(Complex a, decimal b) => Multiply(a, (float)b);
 
         public static Complex operator /(Complex a, Complex b) => Divide(a, b);
         public static Complex operator /(float a, Complex b) => Divide(a, b);
         public static Complex operator /(Complex a, float b) => Divide(a, b);
-
-        public static Complex operator ^(Complex a, Complex b) => Pow(a, b);
-        public static Complex operator ^(Complex a, float b) => Pow(a, b);
-        public static Complex operator ^(float a, Complex b) => Pow(a, b);
+        public static Complex operator /(int a, Complex b) => Divide(a, b);
+        public static Complex operator /(Complex a, int b) => Divide(a, b);
+        public static Complex operator /(double a, Complex b) => Divide((float)a, b);
+        public static Complex operator /(Complex a, double b) => Divide(a, (float)b);
+        public static Complex operator /(decimal a, Complex b) => Divide((float)a, b);
+        public static Complex operator /(Complex a, decimal b) => Divide(a, (float)b);
 
         public static bool operator ==(Complex a, Complex b)
         {
@@ -922,11 +1137,21 @@ namespace GreenElephant
 
             return true;
         }
+        #endregion
 
 
         public override string ToString()
         {
             return ToString(new Complex(r, i));
+        }
+
+        public float Arg()
+        {
+            float angle;
+
+            GreenMath.CartesianToPolar(r, i, out angle);
+
+            return angle;
         }
 
         public override bool Equals(object obj)
@@ -935,4 +1160,3 @@ namespace GreenElephant
         }
     }
 }
-
